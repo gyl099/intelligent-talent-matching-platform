@@ -67,7 +67,7 @@ PostgreSQL Database
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/intelligent-talent-matching-platform.git
+git clone <repository link>
 ```
 
 ### 1. Navigate to Project Directory
