@@ -86,7 +86,7 @@ OR
 python3 -m venv venv
 ```
 
-## 3. Activate Virtual Environment
+### 3. Activate Virtual Environment
 ```bash
 ## Windows
 venv\Scripts\activate
@@ -95,6 +95,31 @@ OR
 
 ## macOS
 source venv/bin/activate
+```
+
+### 4. Install Required Packages
+```bash
+pip install -r requirements.txt
+```
+
+### 5. Install PostgreSQL Driver
+```bash
+pip install psycopg2-binary
+```
+
+### 6. Apply Database Migrations
+```bash
+python manage.py migrate
+```
+
+### 7. Create Superuser
+```bash
+python manage.py createsuperuser
+```
+
+### 8. Run Development Server
+```bash
+python manage.py runserver
 ```
 
 
