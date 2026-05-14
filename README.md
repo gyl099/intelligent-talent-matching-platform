@@ -64,7 +64,7 @@ PostgreSQL Database
 
 ## Installation and Setup Guide
 
-### 1. Clone Repository
+### Clone Repository
 
 ```bash
 git clone <repository link>
