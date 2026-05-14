@@ -58,3 +58,45 @@ HTML/CSS Frontend
 Django Backend Logic
         ↓
 PostgreSQL Database
+```
+
+# Intelligent Talent Matching Platform
+
+## Installation and Setup Guide
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/YOUR_USERNAME/intelligent-talent-matching-platform.git
+```
+
+### 1. Navigate to Project Directory
+```bash
+cd intelligent-talent-matching-platform
+```
+
+### 2. Create Virtual Environment
+```bash
+## Windows
+python -m venv venv
+
+OR
+
+## macOS
+python3 -m venv venv
+```
+
+## 3. Activate Virtual Environment
+```bash
+## Windows
+venv\Scripts\activate
+
+OR
+
+## macOS
+source venv/bin/activate
+```
+
+
+
+
