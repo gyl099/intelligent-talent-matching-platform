@@ -35,8 +35,8 @@ The system aims to simplify and enhance the recruitment process through profile 
 ## Technologies Used
 
 ### Frontend
-- HTML5
-- CSS3
+- React
+- Tailwind Css
 
 ### Backend
 - Django (Python)
