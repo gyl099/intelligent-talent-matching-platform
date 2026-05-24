@@ -10,6 +10,11 @@ from .models import JobApplication, JobPosting
 from .serializers import JobApplicationSerializer, JobPostingSerializer
 
 
+def clean_query_value(value):
+    value = (value or "").strip()
+    return "" if value.lower() in {"undefined", "null"} else value
+
+
 class JobListCreateView(APIView):
     def get_permissions(self):
         if self.request.method == "POST":
@@ -18,9 +23,9 @@ class JobListCreateView(APIView):
 
     def get(self, request):
         jobs = JobPosting.objects.all().order_by("-posted_at")
-        q = request.query_params.get("q", "").strip().lower()
-        work_mode = request.query_params.get("work_mode", "").strip()
-        location = request.query_params.get("location", "").strip().lower()
+        q = clean_query_value(request.query_params.get("q")).lower()
+        work_mode = clean_query_value(request.query_params.get("work_mode"))
+        location = clean_query_value(request.query_params.get("location")).lower()
 
         if work_mode:
             jobs = jobs.filter(work_mode=work_mode)

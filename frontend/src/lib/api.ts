@@ -126,6 +126,16 @@ async function http<T>(path: string, init: RequestInit = {}): Promise<T> {
   return res.json();
 }
 
+function toQueryString(params: Record<string, unknown>) {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value == null || value === "") continue;
+    qs.set(key, String(value));
+  }
+  const text = qs.toString();
+  return text ? `?${text}` : "";
+}
+
 // --- Public API surface ---
 
 export const api = {
@@ -160,8 +170,7 @@ export const api = {
   // Jobs (public browsing + search)
   listJobs: (params: { q?: string; work_mode?: WorkMode; location?: string } = {}) => {
     if (USE_MOCK) return mockApi.listJobs(params);
-    const qs = new URLSearchParams(params as Record<string, string>).toString();
-    return http<JobPosting[]>(`/jobs/?${qs}`);
+    return http<JobPosting[]>(`/jobs/${toQueryString(params)}`);
   },
 
   getJob: (id: string) =>
@@ -178,8 +187,15 @@ export const api = {
   myJobs: () =>
     USE_MOCK ? mockApi.myJobs() : http<JobPosting[]>("/employers/me/jobs/"),
 
-  searchCandidates: (params: { q?: string; skills?: string[]; education?: string; min_experience?: number } = {}) =>
-    USE_MOCK ? mockApi.searchCandidates(params) : http<CandidateProfile[]>(`/candidates/search/?${new URLSearchParams({ ...params, skills: params.skills?.join(",") ?? "" } as any).toString()}`),
+  searchCandidates: (params: { q?: string; skills?: string[]; education?: string; min_experience?: number } = {}) => {
+    if (USE_MOCK) return mockApi.searchCandidates(params);
+    return http<CandidateProfile[]>(`/candidates/search/${toQueryString({
+      q: params.q,
+      skills: params.skills?.join(","),
+      education: params.education,
+      min_experience: params.min_experience,
+    })}`);
+  },
 
   recommendedCandidates: (jobId: string, n = 10) =>
     USE_MOCK ? mockApi.recommendedCandidates(jobId, n) : http<CandidateMatch[]>(`/jobs/${jobId}/recommendations/?n=${n}`),

@@ -34,9 +34,11 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-7 text-sm md:flex">
-          <Link to="/jobs" className="text-muted-foreground transition hover:text-foreground">
-            Browse jobs
-          </Link>
+          {user?.role !== "employer" && (
+            <Link to="/jobs" className="text-muted-foreground transition hover:text-foreground">
+              Browse jobs
+            </Link>
+          )}
           {user?.role === "candidate" && (
             <>
               <Link to="/candidate/dashboard" className="text-muted-foreground transition hover:text-foreground">

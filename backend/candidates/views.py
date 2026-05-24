@@ -14,6 +14,11 @@ from .serializers import CandidateProfileSerializer
 EDU_RANK = {"Diploma": 1, "Bachelor": 2, "Master": 3, "PhD": 4}
 
 
+def clean_query_value(value):
+    value = (value or "").strip()
+    return "" if value.lower() in {"undefined", "null"} else value
+
+
 class CandidateMeView(APIView):
     permission_classes = [IsAuthenticated, IsCandidate]
 
@@ -62,10 +67,10 @@ class CandidateSearchView(APIView):
 
     def get(self, request):
         candidates = CandidateProfile.objects.all().order_by("full_name")
-        q = request.query_params.get("q", "").strip().lower()
-        skills = [s.strip().lower() for s in request.query_params.get("skills", "").split(",") if s.strip()]
-        education = request.query_params.get("education", "").strip()
-        min_experience = request.query_params.get("min_experience")
+        q = clean_query_value(request.query_params.get("q")).lower()
+        skills = [s.strip().lower() for s in clean_query_value(request.query_params.get("skills")).split(",") if s.strip()]
+        education = clean_query_value(request.query_params.get("education"))
+        min_experience = clean_query_value(request.query_params.get("min_experience"))
 
         if q:
             candidates = [
