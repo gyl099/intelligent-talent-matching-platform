@@ -69,7 +69,19 @@ export function CandidateCard({
 
       {candidate.resume_filename && (
         <p className="mt-3 text-xs text-muted-foreground">
-          📎 Resume: <span className="text-foreground">{candidate.resume_filename}</span>
+          Resume:{" "}
+          {candidate.resume_url ? (
+            <a
+              href={candidate.resume_url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-foreground underline underline-offset-2"
+            >
+              {candidate.resume_filename}
+            </a>
+          ) : (
+            <span className="text-foreground">{candidate.resume_filename}</span>
+          )}
         </p>
       )}
 
