@@ -7,6 +7,7 @@
 import type {
   CandidateMatch,
   CandidateProfile,
+  JobApplication,
   JobMatch,
   JobPosting,
   Role,
@@ -20,6 +21,7 @@ const KEY = {
   users: "imp.db.users",
   candidates: "imp.db.candidates",
   jobs: "imp.db.jobs",
+  applications: "imp.db.applications",
   passwords: "imp.db.passwords",
 };
 
@@ -96,6 +98,7 @@ function ensureSeeded() {
   write(KEY.users, users);
   write(KEY.candidates, candidates);
   write(KEY.jobs, jobs);
+  write(KEY.applications, []);
   write(KEY.passwords, {});
   localStorage.setItem("imp.seeded", "1");
 }
@@ -316,5 +319,44 @@ export const mockApi = {
       .sort((a, b) => b.score - a.score)
       .slice(0, n);
     return delay(ranked);
+  },
+
+  async applyToJob(jobId: string): Promise<JobApplication> {
+    const u = auth.getUser();
+    if (!u || u.role !== "candidate") throw new Error("Candidate account required");
+
+    const jobs = read<JobPosting[]>(KEY.jobs, []);
+    const job = jobs.find((j) => j.id === jobId);
+    if (!job) throw new Error("Job not found");
+
+    const candidates = read<CandidateProfile[]>(KEY.candidates, []);
+    const candidate = candidates.find((c) => c.user_id === u.id);
+    if (!candidate) throw new Error("Profile not found");
+
+    const applications = read<JobApplication[]>(KEY.applications, []);
+    const existing = applications.find((a) => a.job_id === jobId && a.candidate.user_id === u.id);
+    if (existing) return delay(existing);
+
+    const application: JobApplication = {
+      id: uid(),
+      job_id: jobId,
+      candidate,
+      applied_at: new Date().toISOString(),
+    };
+    applications.unshift(application);
+    write(KEY.applications, applications);
+    return delay(application);
+  },
+
+  async jobApplications(jobId: string): Promise<JobApplication[]> {
+    const u = auth.getUser();
+    if (!u || u.role !== "employer") throw new Error("Employer account required");
+
+    const jobs = read<JobPosting[]>(KEY.jobs, []);
+    const job = jobs.find((j) => j.id === jobId && j.employer_id === u.id);
+    if (!job) throw new Error("Job not found");
+
+    const applications = read<JobApplication[]>(KEY.applications, []);
+    return delay(applications.filter((a) => a.job_id === jobId));
   },
 };

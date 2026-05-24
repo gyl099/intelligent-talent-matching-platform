@@ -2,7 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { CandidateCard } from "@/components/candidate-card";
-import { api, auth, type CandidateMatch, type JobPosting } from "@/lib/api";
+import { api, auth, type CandidateMatch, type JobApplication, type JobPosting } from "@/lib/api";
 
 export const Route = createFileRoute("/employer/dashboard")({
   beforeLoad: () => {
@@ -18,6 +18,7 @@ function EmployerDashboard() {
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [matches, setMatches] = useState<CandidateMatch[]>([]);
+  const [applications, setApplications] = useState<JobApplication[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
 
   useEffect(() => {
@@ -30,9 +31,11 @@ function EmployerDashboard() {
   useEffect(() => {
     if (!selectedId) return;
     setLoadingMatches(true);
-    api
-      .recommendedCandidates(selectedId, 10)
-      .then(setMatches)
+    Promise.all([api.recommendedCandidates(selectedId, 10), api.jobApplications(selectedId)])
+      .then(([candidateMatches, jobApplications]) => {
+        setMatches(candidateMatches);
+        setApplications(jobApplications);
+      })
       .finally(() => setLoadingMatches(false));
   }, [selectedId]);
 
@@ -88,7 +91,23 @@ function EmployerDashboard() {
             </aside>
 
             <section>
-              <h2 className="font-display text-2xl">Top-10 candidates</h2>
+              <h2 className="font-display text-2xl">Applicants</h2>
+              <p className="text-sm text-muted-foreground">
+                Candidates who applied to this posting.
+              </p>
+              <div className="mt-5 grid gap-4">
+                {loadingMatches ? (
+                  <p className="text-muted-foreground">Loading applicants...</p>
+                ) : applications.length === 0 ? (
+                  <p className="text-muted-foreground">No applications yet.</p>
+                ) : (
+                  applications.map((a) => (
+                    <CandidateCard key={a.id} candidate={a.candidate} />
+                  ))
+                )}
+              </div>
+
+              <h2 className="mt-10 font-display text-2xl">Top-10 candidates</h2>
               <p className="text-sm text-muted-foreground">
                 Ranked by skills overlap, education, and experience.
               </p>

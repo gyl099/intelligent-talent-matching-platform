@@ -75,6 +75,13 @@ export interface CandidateMatch {
   reasons: string[];
 }
 
+export interface JobApplication {
+  id: string;
+  job_id: string;
+  candidate: CandidateProfile;
+  applied_at: string;
+}
+
 // --- Auth token storage ---
 
 const TOKEN_KEY = "imp.token";
@@ -176,6 +183,12 @@ export const api = {
 
   recommendedCandidates: (jobId: string, n = 10) =>
     USE_MOCK ? mockApi.recommendedCandidates(jobId, n) : http<CandidateMatch[]>(`/jobs/${jobId}/recommendations/?n=${n}`),
+
+  applyToJob: (jobId: string) =>
+    USE_MOCK ? mockApi.applyToJob(jobId) : http<JobApplication>(`/jobs/${jobId}/apply/`, { method: "POST", body: JSON.stringify({}) }),
+
+  jobApplications: (jobId: string) =>
+    USE_MOCK ? mockApi.jobApplications(jobId) : http<JobApplication[]>(`/jobs/${jobId}/applications/`),
 };
 
 export const isMockMode = USE_MOCK;

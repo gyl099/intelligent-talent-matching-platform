@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
-from .models import JobPosting
+from candidates.serializers import CandidateProfileSerializer
+
+from .models import JobApplication, JobPosting
 
 
 class JobPostingSerializer(serializers.ModelSerializer):
@@ -30,3 +32,13 @@ class JobPostingSerializer(serializers.ModelSerializer):
         if not isinstance(value, list):
             raise serializers.ValidationError("Required skills must be a list.")
         return [str(skill).strip() for skill in value if str(skill).strip()]
+
+
+class JobApplicationSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(read_only=True)
+    job_id = serializers.CharField(source="job.id", read_only=True)
+    candidate = CandidateProfileSerializer(read_only=True)
+
+    class Meta:
+        model = JobApplication
+        fields = ("id", "job_id", "candidate", "applied_at")

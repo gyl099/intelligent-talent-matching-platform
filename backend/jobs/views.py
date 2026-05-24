@@ -3,11 +3,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.permissions import IsEmployer
+from accounts.permissions import IsCandidate, IsEmployer
 from matching.services import ranked_candidates_for_job
 
-from .models import JobPosting
-from .serializers import JobPostingSerializer
+from .models import JobApplication, JobPosting
+from .serializers import JobApplicationSerializer, JobPostingSerializer
 
 
 class JobListCreateView(APIView):
@@ -67,3 +67,25 @@ class JobRecommendationsView(APIView):
         job = get_object_or_404(JobPosting, pk=pk, employer=request.user)
         n = int(request.query_params.get("n", 10))
         return Response(ranked_candidates_for_job(job, limit=n))
+
+
+class JobApplyView(APIView):
+    permission_classes = [IsAuthenticated, IsCandidate]
+
+    def post(self, request, pk):
+        job = get_object_or_404(JobPosting, pk=pk)
+        application, _ = JobApplication.objects.get_or_create(
+            job=job,
+            candidate=request.user.candidate_profile,
+        )
+        return Response(JobApplicationSerializer(application, context={"request": request}).data)
+
+
+class JobApplicationsView(APIView):
+    permission_classes = [IsAuthenticated, IsEmployer]
+
+    def get(self, request, pk):
+        job = get_object_or_404(JobPosting, pk=pk, employer=request.user)
+        applications = job.applications.select_related("candidate", "candidate__user")
+        serializer = JobApplicationSerializer(applications, many=True, context={"request": request})
+        return Response(serializer.data)

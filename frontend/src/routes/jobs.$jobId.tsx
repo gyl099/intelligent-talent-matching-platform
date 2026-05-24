@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
-import { api, type JobPosting } from "@/lib/api";
+import { api, auth, type JobPosting } from "@/lib/api";
 
 export const Route = createFileRoute("/jobs/$jobId")({
   component: JobDetail,
@@ -11,10 +11,26 @@ function JobDetail() {
   const { jobId } = Route.useParams();
   const [job, setJob] = useState<JobPosting | null>(null);
   const [err, setErr] = useState("");
+  const [applying, setApplying] = useState(false);
+  const [applyMsg, setApplyMsg] = useState("");
+  const user = auth.getUser();
 
   useEffect(() => {
     api.getJob(jobId).then(setJob).catch((e) => setErr((e as Error).message));
   }, [jobId]);
+
+  const apply = async () => {
+    setApplying(true);
+    setApplyMsg("");
+    try {
+      await api.applyToJob(jobId);
+      setApplyMsg("Application sent.");
+    } catch (e) {
+      setApplyMsg((e as Error).message);
+    } finally {
+      setApplying(false);
+    }
+  };
 
   if (err) {
     return (
@@ -84,10 +100,16 @@ function JobDetail() {
               {job.salary_max ? ` – $${job.salary_max.toLocaleString()}` : ""}
               <span className="ml-1 text-sm text-muted-foreground">/ mo</span>
             </div>
-            <button className="btn-lime mt-5 w-full">Apply now</button>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Application flow will POST to your Django <code>/applications/</code> endpoint.
-            </p>
+            {user?.role === "candidate" ? (
+              <>
+                <button onClick={apply} disabled={applying || applyMsg === "Application sent."} className="btn-lime mt-5 w-full">
+                  {applying ? "Applying..." : applyMsg === "Application sent." ? "Applied" : "Apply now"}
+                </button>
+                {applyMsg && <p className="mt-3 text-xs text-muted-foreground">{applyMsg}</p>}
+              </>
+            ) : (
+              <p className="mt-5 text-xs text-muted-foreground">Sign in as a candidate to apply.</p>
+            )}
           </aside>
         </div>
       </div>

@@ -30,3 +30,18 @@ class JobPosting(models.Model):
 
     def __str__(self):
         return f"{self.title} at {self.company}"
+
+
+class JobApplication(models.Model):
+    job = models.ForeignKey(JobPosting, on_delete=models.CASCADE, related_name="applications")
+    candidate = models.ForeignKey("candidates.CandidateProfile", on_delete=models.CASCADE, related_name="applications")
+    applied_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-applied_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["job", "candidate"], name="unique_application_per_job_candidate")
+        ]
+
+    def __str__(self):
+        return f"{self.candidate.full_name} -> {self.job.title}"
