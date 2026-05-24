@@ -5,7 +5,12 @@ __pycache__/
 
 # Virtual environment
 venv/
+venv*/
+.venv*/
 env/
+.deps/
+.tmp/
+.pip-cache/
 
 # Django
 db.sqlite3
@@ -44,3 +49,9 @@ htmlcov/
 
 # Migrations cache
 *.pyc
+
+# Frontend
+node_modules/
+.tanstack/tmp/
+dist/
+.vite/
