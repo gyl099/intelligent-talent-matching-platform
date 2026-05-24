@@ -18,10 +18,16 @@ export function SiteHeader() {
     router.navigate({ to: "/" });
   };
 
+  const homePath = user?.role === "candidate"
+    ? "/candidate/dashboard"
+    : user?.role === "employer"
+      ? "/employer/dashboard"
+      : "/";
+
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur">
       <div className="container-page flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to={homePath} className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-ink)] text-[var(--color-primary-foreground)]">
             <span className="font-display text-sm font-bold">M</span>
           </div>
