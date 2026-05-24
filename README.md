@@ -1,42 +1,50 @@
 # Intelligent Talent Matching Platform
 
 ## Project Overview
-The Intelligent Talent Matching Platform is a web-based recruitment system designed to improve the efficiency of job searching and talent acquisition. The platform provides a two-way matching mechanism that recommends jobs to candidates and candidates to employers based on skills, education, experience, work mode, and location.
 
-The repository contains a React/Tailwind frontend and a Django REST API backend.
+The Intelligent Talent Matching Platform is a web-based recruitment system that improves job searching and talent acquisition. It supports two user roles:
+
+- Candidates can manage profiles, upload resumes, browse jobs, apply for jobs, and receive Top-K job recommendations.
+- Employers can create job postings, search and filter candidates, view applicants, open candidate resumes, and receive Top-N candidate recommendations.
+
+The project uses a React/Tailwind CSS frontend and a Django REST Framework backend.
 
 ## Features
 
 ### Candidate Features
 - Register and login
-- Create and manage candidate profile
-- Upload resume
-- Search for jobs
-- Browse job listings
-- Receive Top-K recommended jobs
+- Create and update candidate profile
+- Upload resume PDF
+- Browse and search job postings
+- View recommended jobs
+- Apply for job postings
 
 ### Employer Features
 - Register and login
 - Create and publish job postings
-- Search candidate profiles
-- Filter candidates by skills, education, and experience
-- Receive Top-N recommended candidates
+- Search and filter candidate profiles
+- View recommended candidates for each job
+- View applicants for each job posting
+- Open uploaded candidate resumes
 
 ## Technologies Used
 
 ### Frontend
 - React
+- TypeScript
 - Tailwind CSS
 - Vite
+- TanStack Router
 
 ### Backend
 - Django
 - Django REST Framework
 - SimpleJWT
+- django-cors-headers
 
 ### Database
 - SQLite for local development
-- PostgreSQL-ready for deployment
+- PostgreSQL-ready for future deployment
 
 ## System Architecture
 
@@ -45,24 +53,25 @@ React + Tailwind frontend
         |
 Django REST API backend
         |
-Database
+SQLite database
 ```
 
 ## Project Structure
 
 ```text
-frontend/   React frontend generated from the UI prototype
-backend/    Django REST backend and matching algorithm
+frontend/   React frontend application
+backend/    Django REST API, database models, and matching logic
 ```
 
 ## Backend Setup
 
-```bash
+Run these commands from the project root in PowerShell:
+
+```powershell
 cd backend
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
-python manage.py makemigrations
 python manage.py migrate
 python manage.py seed_demo
 python manage.py runserver
@@ -83,29 +92,67 @@ Employer: hiring@northwind.io / password123
 
 ## Frontend Setup
 
-Create `frontend/.env`:
+Create `frontend/.env` using the example file:
+
+```powershell
+cd frontend
+copy .env.example .env
+```
+
+The file should contain:
 
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
 ```
 
-Then run:
+Install dependencies and start the frontend:
 
-```bash
-cd frontend
+```powershell
 npm install
 npm run dev
 ```
 
-The frontend usually runs at:
+The frontend runs at:
 
 ```text
-http://localhost:5173
+http://127.0.0.1:5173
 ```
+
+## Running The Project
+
+Use two terminals:
+
+```powershell
+# Terminal 1
+cd backend
+venv\Scripts\activate
+python manage.py runserver
+```
+
+```bash
+# Terminal 2
+cd frontend
+npm run dev
+```
+
+## Main Workflow
+
+1. Login as an employer and create a job posting.
+2. Login as a candidate and browse or view recommended jobs.
+3. Apply for a job from the job detail page.
+4. Login as the employer again.
+5. Open the employer dashboard, select the job, and view applicants.
+6. Click the candidate resume filename to open the uploaded PDF.
 
 ## API Contract
 
-The frontend expects the Django backend endpoints documented in:
+The frontend communicates with the Django backend through the API client in:
+
+```text
+frontend/src/lib/api.ts
+```
+
+The expected endpoint contract is documented in:
 
 ```text
 frontend/API_CONTRACT.md
