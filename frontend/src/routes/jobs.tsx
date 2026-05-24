@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { JobCard } from "@/components/job-card";
@@ -17,6 +17,7 @@ export const Route = createFileRoute("/jobs")({
 const MODES: (WorkMode | "All")[] = ["All", "Remote", "Hybrid", "On-site"];
 
 function JobsPage() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [q, setQ] = useState("");
   const [mode, setMode] = useState<WorkMode | "All">("All");
   const [location, setLocation] = useState("");
@@ -34,6 +35,10 @@ function JobsPage() {
       .then(setJobs)
       .finally(() => setLoading(false));
   }, [q, mode, location]);
+
+  if (pathname.replace(/\/$/, "") !== "/jobs") {
+    return <Outlet />;
+  }
 
   return (
     <div className="min-h-screen">
