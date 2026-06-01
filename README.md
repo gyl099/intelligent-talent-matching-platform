@@ -63,10 +63,9 @@ frontend/   React frontend application
 backend/    Django REST API, database models, and matching logic
 ```
 ### How to view the project
-This project can be opened via the automated .bat file included with other files or manually through terminal
+This project can be opened via the automated .bat file (GOTO the bottom of the README for instructions) included with other files or manually through terminal
 
 # For manual setup and other commands via terminal, follow the instructions below
-
 ## Backend Setup
 
 Run these commands from the project root in PowerShell:
@@ -175,4 +174,15 @@ The expected endpoint contract is documented in:
 ```text
 frontend/API_CONTRACT.md
 ```
+
+
+
+## The automatic Setup
+
+If manual setup has already been completed, ignore 1 and 2.
+
+Automatic setup utilises "Start.bat", however there is one dependency which must be setup first.
+1. You must have node.js already installed.
+2. Check that npm is working in your command line with "npm -v". If you get an error like: File C:\Program Files\nodejs\npm.ps1 cannot be loaded because running scripts is disabled on this system. Enter the following command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser".
+3. You can now use Start.bat to automatically open the frontend and backend servers and also the website page.
 
