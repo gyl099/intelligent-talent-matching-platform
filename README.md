@@ -90,9 +90,9 @@ Candidate: aarav.mehta@example.com / password123
 Employer: hiring@northwind.io / password123
 ```
 
-## To access Django administration (viewing database):
+## Access database (Django Administration):
 
-This command creates a user in the Django administration page
+This command creates a user onto Django administration
 
 ```powershell
 python manage.py createsuperuser
