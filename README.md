@@ -77,6 +77,20 @@ python manage.py seed_demo
 python manage.py runserver
 ```
 
+## To access Django administration (viewing database):
+
+This command creates a user in the Django administration page
+
+```powershell
+python manage.py createsuperuser
+```
+
+To access Django administration:
+
+```text
+http://127.0.0.1:8000/admin/
+```
+
 The backend runs at:
 
 ```text
@@ -157,3 +171,4 @@ The expected endpoint contract is documented in:
 ```text
 frontend/API_CONTRACT.md
 ```
+
