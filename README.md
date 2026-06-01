@@ -77,6 +77,19 @@ python manage.py seed_demo
 python manage.py runserver
 ```
 
+The backend runs at:
+
+```text
+http://127.0.0.1:8000/api
+```
+
+Demo accounts after seeding:
+
+```text
+Candidate: aarav.mehta@example.com / password123
+Employer: hiring@northwind.io / password123
+```
+
 ## To access Django administration (viewing database):
 
 This command creates a user in the Django administration page
@@ -89,19 +102,6 @@ To access Django administration:
 
 ```text
 http://127.0.0.1:8000/admin/
-```
-
-The backend runs at:
-
-```text
-http://127.0.0.1:8000/api
-```
-
-Demo accounts after seeding:
-
-```text
-Candidate: aarav.mehta@example.com / password123
-Employer: hiring@northwind.io / password123
 ```
 
 ## Frontend Setup
