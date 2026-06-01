@@ -63,7 +63,7 @@ frontend/   React frontend application
 backend/    Django REST API, database models, and matching logic
 ```
 ### How to view the project
-This project can be opened via the automated .bat file (GOTO the bottom of the README for instructions) included with other files or manually through terminal
+This project can be opened via the automated .bat file (Go to the bottom of the README for instructions) included with other files or manually through terminal
 
 # For manual setup and other commands via terminal, follow the instructions below
 ## Backend Setup
