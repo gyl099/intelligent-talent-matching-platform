@@ -63,6 +63,8 @@ frontend/   React frontend application
 backend/    Django REST API, database models, and matching logic
 ```
 
+# For manual setup via terminal commands, follow the instructions below
+
 ## Backend Setup
 
 Run these commands from the project root in PowerShell:
