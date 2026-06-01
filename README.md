@@ -62,8 +62,10 @@ SQLite database
 frontend/   React frontend application
 backend/    Django REST API, database models, and matching logic
 ```
+### How to view the project
+This project can be opened via the automated .bat file included with other files or manually through terminal
 
-# For manual setup via terminal commands, follow the instructions below
+# For manual setup and other commands via terminal, follow the instructions below
 
 ## Backend Setup
 
