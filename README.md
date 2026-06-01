@@ -90,6 +90,20 @@ Candidate: aarav.mehta@example.com / password123
 Employer: hiring@northwind.io / password123
 ```
 
+## Access database (Django Administration):
+
+This command creates a user onto Django administration
+
+```powershell
+python manage.py createsuperuser
+```
+
+To access Django administration:
+
+```text
+http://127.0.0.1:8000/admin/
+```
+
 ## Frontend Setup
 
 Create `frontend/.env` using the example file:
@@ -157,3 +171,4 @@ The expected endpoint contract is documented in:
 ```text
 frontend/API_CONTRACT.md
 ```
+
