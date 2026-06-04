@@ -58,8 +58,8 @@ export interface JobPosting {
   min_years_experience: number;
   work_mode: WorkMode;
   location: string;
-  salary_min?: number;
-  salary_max?: number;
+  salary_min?: number | null;
+  salary_max?: number | null;
   posted_at: string;
 }
 
@@ -183,6 +183,9 @@ export const api = {
   // Employer
   createJob: (input: Omit<JobPosting, "id" | "employer_id" | "posted_at">) =>
     USE_MOCK ? mockApi.createJob(input) : http<JobPosting>("/jobs/", { method: "POST", body: JSON.stringify(input) }),
+
+  updateJob: (id: string, input: Partial<Omit<JobPosting, "id" | "employer_id" | "posted_at">>) =>
+    USE_MOCK ? mockApi.updateJob(id, input) : http<JobPosting>(`/jobs/${id}/`, { method: "PATCH", body: JSON.stringify(input) }),
 
   myJobs: () =>
     USE_MOCK ? mockApi.myJobs() : http<JobPosting[]>("/employers/me/jobs/"),

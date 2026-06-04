@@ -282,6 +282,17 @@ export const mockApi = {
     return delay(j);
   },
 
+  async updateJob(id: string, input: Partial<Omit<JobPosting, "id" | "employer_id" | "posted_at">>) {
+    const u = auth.getUser();
+    if (!u || u.role !== "employer") throw new Error("Employer account required");
+    const jobs = read<JobPosting[]>(KEY.jobs, []);
+    const idx = jobs.findIndex((j) => j.id === id && j.employer_id === u.id);
+    if (idx === -1) throw new Error("Job not found");
+    jobs[idx] = { ...jobs[idx], ...input };
+    write(KEY.jobs, jobs);
+    return delay(jobs[idx]);
+  },
+
   async myJobs() {
     const u = auth.getUser();
     if (!u) throw new Error("Not authenticated");

@@ -52,9 +52,21 @@ class JobListCreateView(APIView):
 
 
 class JobDetailView(APIView):
+    def get_permissions(self):
+        if self.request.method == "PATCH":
+            return [IsAuthenticated(), IsEmployer()]
+        return []
+
     def get(self, request, pk):
         job = get_object_or_404(JobPosting, pk=pk)
         return Response(JobPostingSerializer(job).data)
+
+    def patch(self, request, pk):
+        job = get_object_or_404(JobPosting, pk=pk, employer=request.user)
+        serializer = JobPostingSerializer(job, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 class EmployerJobsView(APIView):
