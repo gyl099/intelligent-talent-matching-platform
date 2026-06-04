@@ -67,28 +67,32 @@ export function CandidateCard({
         </ul>
       )}
 
-      {candidate.resume_filename && (
-        <p className="mt-3 text-xs text-muted-foreground">
-          Resume:{" "}
-          {candidate.resume_url ? (
-            <a
-              href={candidate.resume_url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-foreground underline underline-offset-2"
-            >
-              {candidate.resume_filename}
-            </a>
-          ) : (
-            <span className="text-foreground">{candidate.resume_filename}</span>
-          )}
-        </p>
-      )}
-
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 flex flex-wrap gap-2">
         <a href={`mailto:${candidate.email}`} className="btn-primary">
           Contact
         </a>
+        {candidate.resume_filename && candidate.resume_url && (
+          <a
+            href={candidate.resume_url}
+            download={candidate.resume_filename}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-ghost inline-flex items-center gap-1.5"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M3 7V4a1 1 0 011-1h16a1 1 0 011 1v3" />
+            </svg>
+            Download Resume
+          </a>
+        )}
+        {candidate.resume_filename && !candidate.resume_url && (
+          <span className="btn-ghost cursor-default opacity-50 inline-flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            {candidate.resume_filename}
+          </span>
+        )}
       </div>
     </div>
   );

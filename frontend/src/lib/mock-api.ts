@@ -250,17 +250,29 @@ export const mockApi = {
   },
 
   async uploadResume(file: File) {
-    // Mock: just record the filename; backend would persist & possibly parse.
     const u = auth.getUser();
     if (!u) throw new Error("Not authenticated");
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      throw new Error("Please upload a PDF file.");
+    }
+
+    // Convert to a base64 data URL so the file is genuinely downloadable
+    // in the browser without a real server.
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error("Failed to read file."));
+      reader.readAsDataURL(file);
+    });
+
     const candidates = read<CandidateProfile[]>(KEY.candidates, []);
     const idx = candidates.findIndex((x) => x.user_id === u.id);
     if (idx !== -1) {
       candidates[idx].resume_filename = file.name;
-      candidates[idx].resume_url = `mock://resume/${file.name}`;
+      candidates[idx].resume_url = dataUrl;
       write(KEY.candidates, candidates);
     }
-    return delay({ resume_url: `mock://resume/${file.name}`, resume_filename: file.name });
+    return delay({ resume_url: dataUrl, resume_filename: file.name });
   },
 
   async listJobs(params: { q?: string; work_mode?: WorkMode; location?: string; salary_min?: number; salary_max?: number; required_education?: string }) {
