@@ -15,9 +15,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobsJobIdRouteImport } from './routes/jobs.$jobId'
+import { Route as EmployerMembershipRouteImport } from './routes/employer.membership'
 import { Route as EmployerDashboardRouteImport } from './routes/employer.dashboard'
 import { Route as EmployerCandidatesRouteImport } from './routes/employer.candidates'
 import { Route as CandidateProfileRouteImport } from './routes/candidate.profile'
+import { Route as CandidateMembershipRouteImport } from './routes/candidate.membership'
 import { Route as CandidateDashboardRouteImport } from './routes/candidate.dashboard'
 import { Route as EmployerJobsNewRouteImport } from './routes/employer.jobs.new'
 
@@ -51,6 +53,11 @@ const JobsJobIdRoute = JobsJobIdRouteImport.update({
   path: '/$jobId',
   getParentRoute: () => JobsRoute,
 } as any)
+const EmployerMembershipRoute = EmployerMembershipRouteImport.update({
+  id: '/employer/membership',
+  path: '/employer/membership',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EmployerDashboardRoute = EmployerDashboardRouteImport.update({
   id: '/employer/dashboard',
   path: '/employer/dashboard',
@@ -64,6 +71,11 @@ const EmployerCandidatesRoute = EmployerCandidatesRouteImport.update({
 const CandidateProfileRoute = CandidateProfileRouteImport.update({
   id: '/candidate/profile',
   path: '/candidate/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CandidateMembershipRoute = CandidateMembershipRouteImport.update({
+  id: '/candidate/membership',
+  path: '/candidate/membership',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CandidateDashboardRoute = CandidateDashboardRouteImport.update({
@@ -84,9 +96,11 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/candidate/dashboard': typeof CandidateDashboardRoute
+  '/candidate/membership': typeof CandidateMembershipRoute
   '/candidate/profile': typeof CandidateProfileRoute
   '/employer/candidates': typeof EmployerCandidatesRoute
   '/employer/dashboard': typeof EmployerDashboardRoute
+  '/employer/membership': typeof EmployerMembershipRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/employer/jobs/new': typeof EmployerJobsNewRoute
 }
@@ -97,9 +111,11 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/candidate/dashboard': typeof CandidateDashboardRoute
+  '/candidate/membership': typeof CandidateMembershipRoute
   '/candidate/profile': typeof CandidateProfileRoute
   '/employer/candidates': typeof EmployerCandidatesRoute
   '/employer/dashboard': typeof EmployerDashboardRoute
+  '/employer/membership': typeof EmployerMembershipRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/employer/jobs/new': typeof EmployerJobsNewRoute
 }
@@ -111,9 +127,11 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/candidate/dashboard': typeof CandidateDashboardRoute
+  '/candidate/membership': typeof CandidateMembershipRoute
   '/candidate/profile': typeof CandidateProfileRoute
   '/employer/candidates': typeof EmployerCandidatesRoute
   '/employer/dashboard': typeof EmployerDashboardRoute
+  '/employer/membership': typeof EmployerMembershipRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/employer/jobs/new': typeof EmployerJobsNewRoute
 }
@@ -126,9 +144,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/candidate/dashboard'
+    | '/candidate/membership'
     | '/candidate/profile'
     | '/employer/candidates'
     | '/employer/dashboard'
+    | '/employer/membership'
     | '/jobs/$jobId'
     | '/employer/jobs/new'
   fileRoutesByTo: FileRoutesByTo
@@ -139,9 +159,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/candidate/dashboard'
+    | '/candidate/membership'
     | '/candidate/profile'
     | '/employer/candidates'
     | '/employer/dashboard'
+    | '/employer/membership'
     | '/jobs/$jobId'
     | '/employer/jobs/new'
   id:
@@ -152,9 +174,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/candidate/dashboard'
+    | '/candidate/membership'
     | '/candidate/profile'
     | '/employer/candidates'
     | '/employer/dashboard'
+    | '/employer/membership'
     | '/jobs/$jobId'
     | '/employer/jobs/new'
   fileRoutesById: FileRoutesById
@@ -166,9 +190,11 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   CandidateDashboardRoute: typeof CandidateDashboardRoute
+  CandidateMembershipRoute: typeof CandidateMembershipRoute
   CandidateProfileRoute: typeof CandidateProfileRoute
   EmployerCandidatesRoute: typeof EmployerCandidatesRoute
   EmployerDashboardRoute: typeof EmployerDashboardRoute
+  EmployerMembershipRoute: typeof EmployerMembershipRoute
   EmployerJobsNewRoute: typeof EmployerJobsNewRoute
 }
 
@@ -216,6 +242,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JobsJobIdRouteImport
       parentRoute: typeof JobsRoute
     }
+    '/employer/membership': {
+      id: '/employer/membership'
+      path: '/employer/membership'
+      fullPath: '/employer/membership'
+      preLoaderRoute: typeof EmployerMembershipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/employer/dashboard': {
       id: '/employer/dashboard'
       path: '/employer/dashboard'
@@ -235,6 +268,13 @@ declare module '@tanstack/react-router' {
       path: '/candidate/profile'
       fullPath: '/candidate/profile'
       preLoaderRoute: typeof CandidateProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/candidate/membership': {
+      id: '/candidate/membership'
+      path: '/candidate/membership'
+      fullPath: '/candidate/membership'
+      preLoaderRoute: typeof CandidateMembershipRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/candidate/dashboard': {
@@ -271,9 +311,11 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   CandidateDashboardRoute: CandidateDashboardRoute,
+  CandidateMembershipRoute: CandidateMembershipRoute,
   CandidateProfileRoute: CandidateProfileRoute,
   EmployerCandidatesRoute: EmployerCandidatesRoute,
   EmployerDashboardRoute: EmployerDashboardRoute,
+  EmployerMembershipRoute: EmployerMembershipRoute,
   EmployerJobsNewRoute: EmployerJobsNewRoute,
 }
 export const routeTree = rootRouteImport

@@ -41,6 +41,7 @@ def score_job_for_candidate(job, candidate):
 
 
 def ranked_jobs_for_candidate(candidate, limit=10):
+    """Return scored job matches for a candidate. limit=None means unlimited (members only)."""
     ranked = []
     for job in JobPosting.objects.all():
         result = score_job_for_candidate(job, candidate)
@@ -49,10 +50,12 @@ def ranked_jobs_for_candidate(candidate, limit=10):
             "score": result["score"],
             "reasons": result["reasons"],
         })
-    return sorted(ranked, key=lambda item: item["score"], reverse=True)[:limit]
+    ranked.sort(key=lambda item: item["score"], reverse=True)
+    return ranked if limit is None else ranked[:limit]
 
 
 def ranked_candidates_for_job(job, limit=10):
+    """Return scored candidate matches for a job. limit=None means unlimited (members only)."""
     ranked = []
     for candidate in CandidateProfile.objects.all():
         result = score_job_for_candidate(job, candidate)
@@ -61,4 +64,5 @@ def ranked_candidates_for_job(job, limit=10):
             "score": result["score"],
             "reasons": result["reasons"],
         })
-    return sorted(ranked, key=lambda item: item["score"], reverse=True)[:limit]
+    ranked.sort(key=lambda item: item["score"], reverse=True)
+    return ranked if limit is None else ranked[:limit]

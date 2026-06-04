@@ -1,5 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { SiteHeader } from "@/components/site-header";
+import { auth } from "@/lib/api";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -18,6 +20,14 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const u = auth.getUser();
+    if (u?.role === "candidate") router.navigate({ to: "/candidate/dashboard", replace: true });
+    else if (u?.role === "employer") router.navigate({ to: "/employer/dashboard", replace: true });
+  }, [router]);
+
   return (
     <div className="min-h-screen">
       <SiteHeader />

@@ -24,6 +24,7 @@ export interface User {
   email: string;
   role: Role;
   full_name: string;
+  is_member: boolean;
   created_at: string;
 }
 
@@ -167,8 +168,15 @@ export const api = {
     return res.json();
   },
 
+  // Membership
+  activateMembership: () =>
+    USE_MOCK ? mockApi.activateMembership() : http<{ is_member: boolean; user: User }>("/auth/membership/", { method: "POST", body: JSON.stringify({}) }),
+
+  cancelMembership: () =>
+    USE_MOCK ? mockApi.cancelMembership() : http<{ is_member: boolean; user: User }>("/auth/membership/", { method: "DELETE" }),
+
   // Jobs (public browsing + search)
-  listJobs: (params: { q?: string; work_mode?: WorkMode; location?: string } = {}) => {
+  listJobs: (params: { q?: string; work_mode?: WorkMode; location?: string; salary_min?: number; salary_max?: number; required_education?: string } = {}) => {
     if (USE_MOCK) return mockApi.listJobs(params);
     return http<JobPosting[]>(`/jobs/${toQueryString(params)}`);
   },
@@ -176,9 +184,9 @@ export const api = {
   getJob: (id: string) =>
     USE_MOCK ? mockApi.getJob(id) : http<JobPosting>(`/jobs/${id}/`),
 
-  // Recommendations
-  recommendedJobs: (k = 10) =>
-    USE_MOCK ? mockApi.recommendedJobs(k) : http<JobMatch[]>(`/candidates/me/recommendations/?k=${k}`),
+  // Recommendations (pass k=undefined for unlimited — members only)
+  recommendedJobs: (k?: number) =>
+    USE_MOCK ? mockApi.recommendedJobs(k) : http<JobMatch[]>(`/candidates/me/recommendations/${k != null ? `?k=${k}` : ""}`),
 
   // Employer
   createJob: (input: Omit<JobPosting, "id" | "employer_id" | "posted_at">) =>
@@ -190,18 +198,23 @@ export const api = {
   myJobs: () =>
     USE_MOCK ? mockApi.myJobs() : http<JobPosting[]>("/employers/me/jobs/"),
 
-  searchCandidates: (params: { q?: string; skills?: string[]; education?: string; min_experience?: number } = {}) => {
+  deleteJob: (id: string) =>
+    USE_MOCK ? mockApi.deleteJob(id) : http<void>(`/jobs/${id}/`, { method: "DELETE" }),
+
+  searchCandidates: (params: { q?: string; skills?: string[]; education?: string; min_experience?: number; location?: string } = {}) => {
     if (USE_MOCK) return mockApi.searchCandidates(params);
     return http<CandidateProfile[]>(`/candidates/search/${toQueryString({
       q: params.q,
       skills: params.skills?.join(","),
       education: params.education,
       min_experience: params.min_experience,
+      location: params.location,
     })}`);
   },
 
-  recommendedCandidates: (jobId: string, n = 10) =>
-    USE_MOCK ? mockApi.recommendedCandidates(jobId, n) : http<CandidateMatch[]>(`/jobs/${jobId}/recommendations/?n=${n}`),
+  // n=undefined means unlimited (members only)
+  recommendedCandidates: (jobId: string, n?: number) =>
+    USE_MOCK ? mockApi.recommendedCandidates(jobId, n) : http<CandidateMatch[]>(`/jobs/${jobId}/recommendations/${n != null ? `?n=${n}` : ""}`),
 
   applyToJob: (jobId: string) =>
     USE_MOCK ? mockApi.applyToJob(jobId) : http<JobApplication>(`/jobs/${jobId}/apply/`, { method: "POST", body: JSON.stringify({}) }),

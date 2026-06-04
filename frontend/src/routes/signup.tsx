@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { api, auth, type Role } from "@/lib/api";
 
@@ -15,6 +15,12 @@ function SignupPage() {
   const { role: initialRole } = Route.useSearch();
   const router = useRouter();
   const [role, setRole] = useState<Role>(initialRole);
+
+  useEffect(() => {
+    const u = auth.getUser();
+    if (u?.role === "candidate") router.navigate({ to: "/candidate/dashboard", replace: true });
+    else if (u?.role === "employer") router.navigate({ to: "/employer/dashboard", replace: true });
+  }, [router]);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");

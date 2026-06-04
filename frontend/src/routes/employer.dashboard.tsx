@@ -26,6 +26,15 @@ function EmployerDashboard() {
   const [loadingMatches, setLoadingMatches] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Membership state
+  const [isMember, setIsMember] = useState<boolean>(auth.getUser()?.is_member ?? false);
+  const [memberLoading, setMemberLoading] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+
+  // Delete state
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   useEffect(() => {
     api.myJobs().then((js) => {
       setJobs(js);
@@ -36,24 +45,92 @@ function EmployerDashboard() {
   useEffect(() => {
     if (!selectedId) return;
     setLoadingMatches(true);
-    Promise.all([api.recommendedCandidates(selectedId, 10), api.jobApplications(selectedId)])
+    Promise.all([
+      api.recommendedCandidates(selectedId, isMember ? undefined : 10),
+      api.jobApplications(selectedId),
+    ])
       .then(([candidateMatches, jobApplications]) => {
         setMatches(candidateMatches);
         setApplications(jobApplications);
       })
       .finally(() => setLoadingMatches(false));
-  }, [selectedId, refreshKey]);
+  }, [selectedId, isMember, refreshKey]);
+
+  async function handleCancelMembership() {
+    setMemberLoading(true);
+    try {
+      await api.cancelMembership();
+      setIsMember(false);
+      setConfirmCancel(false);
+    } catch {
+      setConfirmCancel(false);
+    } finally {
+      setMemberLoading(false);
+    }
+  }
+
+  async function handleDeleteJob(id: string) {
+    setDeletingId(id);
+    try {
+      await api.deleteJob(id);
+      const remaining = jobs.filter((j) => j.id !== id);
+      setJobs(remaining);
+      setConfirmDeleteId(null);
+      if (selectedId === id) {
+        const next = remaining[0]?.id ?? null;
+        setSelectedId(next);
+        if (!next) { setMatches([]); setApplications([]); }
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  const selectedJob = jobs.find((j) => j.id === selectedId);
 
   return (
     <div className="min-h-screen">
       <SiteHeader />
       <div className="container-page py-12">
+
+        {/* ── Header ── */}
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-sm text-muted-foreground">Employer dashboard</p>
             <h1 className="mt-1 font-display text-4xl md:text-5xl">Your postings</h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {isMember ? (
+              confirmCancel ? (
+                <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
+                  <span className="text-destructive font-medium">Cancel membership?</span>
+                  <button
+                    onClick={handleCancelMembership}
+                    disabled={memberLoading}
+                    className="rounded-md bg-destructive px-3 py-1 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                  >
+                    {memberLoading ? "…" : "Yes, cancel"}
+                  </button>
+                  <button
+                    onClick={() => setConfirmCancel(false)}
+                    className="rounded-md border border-border bg-card px-3 py-1 text-xs font-medium hover:bg-accent"
+                  >
+                    Keep it
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmCancel(true)}
+                  className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+                >
+                  Cancel membership
+                </button>
+              )
+            ) : (
+              <Link to="/employer/membership" className="btn-lime">
+                Upgrade to member →
+              </Link>
+            )}
             <Link to="/employer/candidates" className="btn-ghost">
               Search candidates
             </Link>
@@ -63,6 +140,21 @@ function EmployerDashboard() {
           </div>
         </div>
 
+        {/* ── Membership banner ── */}
+        {isMember ? (
+          <div className="mt-4 rounded-xl border border-[var(--color-lime)] bg-[var(--color-lime)]/30 p-3 text-sm">
+            <strong>Member:</strong> Showing all matched candidates with no limit.
+          </div>
+        ) : (
+          <div className="mt-4 rounded-xl border border-border bg-card p-3 text-sm text-muted-foreground">
+            Non-member: showing top 10 candidate matches per posting.{" "}
+            <Link to="/employer/membership" className="underline text-foreground">
+              Upgrade to see all →
+            </Link>
+          </div>
+        )}
+
+        {/* ── Body ── */}
         {jobs.length === 0 ? (
           <div className="card-surface mt-10 text-center">
             <h2 className="font-display text-2xl">No postings yet</h2>
@@ -73,65 +165,127 @@ function EmployerDashboard() {
           </div>
         ) : (
           <div className="mt-8 grid gap-8 lg:grid-cols-[300px_1fr]">
+
+            {/* ── Job sidebar ── */}
             <aside className="space-y-2">
               {jobs.map((j) => (
-                <article
+                <div
                   key={j.id}
-                  className={`rounded-xl border p-4 transition ${
+                  className={`rounded-xl border transition ${
                     selectedId === j.id
                       ? "border-[var(--color-ink)] bg-card"
-                      : "border-border bg-card/60 hover:border-foreground/40"
+                      : "border-border bg-card/60"
                   }`}
                 >
-                  <button type="button" onClick={() => setSelectedId(j.id)} className="w-full text-left">
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedId(j.id); setConfirmDeleteId(null); }}
+                    className="w-full p-4 text-left"
+                  >
                     <p className="font-display text-base">{j.title}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       {j.work_mode} · {j.location}
                     </p>
-                    <p className="mt-2 text-xs text-muted-foreground">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {j.required_skills.length} skills · {j.min_years_experience}+ yrs
                     </p>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedId(j.id);
-                      setEditingJob(j);
-                    }}
-                    className="mt-4 inline-flex w-full items-center justify-center rounded-full border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground transition hover:border-[var(--color-ink)] hover:bg-accent"
-                  >
-                    Manage
-                  </button>
-                </article>
+
+                  {/* Manage + Delete row */}
+                  <div className="flex items-center justify-between border-t border-border px-4 py-2">
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedId(j.id); setEditingJob(j); }}
+                      className="text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                    >
+                      Edit
+                    </button>
+
+                    {confirmDeleteId === j.id ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-destructive">Delete?</span>
+                        <button
+                          onClick={() => handleDeleteJob(j.id)}
+                          disabled={deletingId === j.id}
+                          className="rounded bg-destructive px-2.5 py-1 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                        >
+                          {deletingId === j.id ? "…" : "Yes"}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="rounded border border-border bg-card px-2.5 py-1 text-xs hover:bg-accent"
+                        >
+                          No
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(j.id)}
+                        className="text-xs text-muted-foreground transition hover:text-destructive"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
               ))}
             </aside>
 
+            {/* ── Detail panel ── */}
             <section>
-              <h2 className="font-display text-2xl">Applicants</h2>
-              <p className="text-sm text-muted-foreground">
-                Candidates who applied to this posting.
-              </p>
-              <div className="mt-5 grid gap-4">
+              {selectedJob && (
+                <div className="mb-6 rounded-xl border border-border bg-card/60 px-5 py-3 text-sm text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1">
+                  <span className="font-medium text-foreground">{selectedJob.title}</span>
+                  <span>{selectedJob.company}</span>
+                  <span>{selectedJob.work_mode} · {selectedJob.location}</span>
+                  {(selectedJob.salary_min || selectedJob.salary_max) && (
+                    <span>
+                      ${selectedJob.salary_min?.toLocaleString() ?? "?"} – ${selectedJob.salary_max?.toLocaleString() ?? "?"}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Applicants */}
+              <div>
+                <h2 className="font-display text-2xl">Applicants</h2>
+                <p className="text-sm text-muted-foreground">
+                  Candidates who applied to this posting.
+                  {!loadingMatches && ` ${applications.length} total.`}
+                </p>
+              </div>
+              <div className="mt-4 grid gap-4">
                 {loadingMatches ? (
-                  <p className="text-muted-foreground">Loading applicants...</p>
+                  <p className="text-muted-foreground">Loading…</p>
                 ) : applications.length === 0 ? (
-                  <p className="text-muted-foreground">No applications yet.</p>
+                  <p className="text-sm text-muted-foreground">No applications yet.</p>
                 ) : (
                   applications.map((a) => (
-                    <CandidateCard key={a.id} candidate={a.candidate} />
+                    <div key={a.id}>
+                      <CandidateCard candidate={a.candidate} />
+                      <p className="mt-1 px-1 text-xs text-muted-foreground">
+                        Applied {new Date(a.applied_at).toLocaleDateString(undefined, { dateStyle: "medium" })}
+                      </p>
+                    </div>
                   ))
                 )}
               </div>
 
-              <h2 className="mt-10 font-display text-2xl">Top-10 candidates</h2>
-              <p className="text-sm text-muted-foreground">
-                Ranked by skills overlap, education, and experience.
-              </p>
-              <div className="mt-5 grid gap-4">
+              {/* Matched candidates */}
+              <div className="mt-10">
+                <h2 className="font-display text-2xl">
+                  {isMember ? "All matched candidates" : "Top‑10 candidates"}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Ranked by skills, education, and experience.
+                  {!loadingMatches && ` ${matches.length} result${matches.length !== 1 ? "s" : ""}.`}
+                </p>
+              </div>
+              <div className="mt-4 grid gap-4">
                 {loadingMatches ? (
                   <p className="text-muted-foreground">Computing matches…</p>
                 ) : matches.length === 0 ? (
-                  <p className="text-muted-foreground">No candidates yet.</p>
+                  <p className="text-sm text-muted-foreground">No candidates yet.</p>
                 ) : (
                   matches.map((m) => (
                     <CandidateCard
@@ -147,6 +301,7 @@ function EmployerDashboard() {
           </div>
         )}
       </div>
+
       {editingJob && (
         <ManageJobModal
           job={editingJob}
@@ -195,10 +350,7 @@ function ManageJobModal({
         company,
         description,
         required_education: education,
-        required_skills: skillsText
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        required_skills: skillsText.split(",").map((s) => s.trim()).filter(Boolean),
         min_years_experience: minYears,
         work_mode: mode,
         location,
@@ -225,9 +377,9 @@ function ManageJobModal({
             type="button"
             onClick={onClose}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-lg leading-none transition hover:bg-accent"
-            aria-label="Close manage job modal"
+            aria-label="Close"
           >
-            x
+            ×
           </button>
         </div>
 
@@ -252,9 +404,7 @@ function ManageJobModal({
             <div>
               <label className="label">Required education</label>
               <select className="field" value={education} onChange={(e) => setEducation(e.target.value)}>
-                {EDU.map((e) => (
-                  <option key={e}>{e}</option>
-                ))}
+                {EDU.map((e) => <option key={e}>{e}</option>)}
               </select>
             </div>
             <div>
@@ -264,9 +414,7 @@ function ManageJobModal({
             <div>
               <label className="label">Work mode</label>
               <select className="field" value={mode} onChange={(e) => setMode(e.target.value as WorkMode)}>
-                {MODES.map((m) => (
-                  <option key={m}>{m}</option>
-                ))}
+                {MODES.map((m) => <option key={m}>{m}</option>)}
               </select>
             </div>
           </div>
@@ -300,11 +448,9 @@ function ManageJobModal({
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <div className="flex flex-wrap justify-end gap-3 border-t border-border pt-5">
-            <button type="button" onClick={onClose} className="btn-ghost">
-              Cancel
-            </button>
+            <button type="button" onClick={onClose} className="btn-ghost">Cancel</button>
             <button disabled={saving} className="btn-lime">
-              {saving ? "Saving..." : "Save changes"}
+              {saving ? "Saving…" : "Save changes"}
             </button>
           </div>
         </form>

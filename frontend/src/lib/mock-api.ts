@@ -25,6 +25,39 @@ const KEY = {
   passwords: "imp.db.passwords",
 };
 
+// --- Fuzzy search helper ---
+// Matches all whitespace-separated query terms against a target string.
+// Each term matches if it's a substring OR if any word in the target has
+// a similarity ratio >= FUZZY_THRESHOLD (handles typos, abbreviations).
+
+const FUZZY_THRESHOLD = 0.72;
+
+function similarityRatio(a: string, b: string): number {
+  if (a === b) return 1;
+  const longer = a.length > b.length ? a : b;
+  const shorter = a.length > b.length ? b : a;
+  if (longer.length === 0) return 1;
+  let matches = 0;
+  const used = new Array(longer.length).fill(false);
+  for (let i = 0; i < shorter.length; i++) {
+    for (let j = 0; j < longer.length; j++) {
+      if (!used[j] && shorter[i] === longer[j]) { matches++; used[j] = true; break; }
+    }
+  }
+  return (2.0 * matches) / (a.length + b.length);
+}
+
+function fuzzyMatch(query: string, text: string): boolean {
+  const textLower = text.toLowerCase();
+  const textTokens = textLower.match(/[a-z0-9#+.]+/g) ?? [];
+  const terms = query.toLowerCase().match(/[a-z0-9#+.]+/g) ?? [];
+  if (terms.length === 0) return true;
+  return terms.every((term) => {
+    if (textLower.includes(term)) return true;
+    return textTokens.some((tok) => tok.length >= 3 && similarityRatio(term, tok) >= FUZZY_THRESHOLD);
+  });
+}
+
 const hasLS = () => typeof window !== "undefined" && typeof localStorage !== "undefined";
 
 function read<T>(k: string, fallback: T): T {
@@ -58,6 +91,7 @@ function ensureSeeded() {
         email: sj.employer_email,
         role: "employer",
         full_name: sj.company,
+        is_member: false,
         created_at: new Date().toISOString(),
       });
     }
@@ -86,6 +120,7 @@ function ensureSeeded() {
       email: sc.email,
       role: "candidate",
       full_name: sc.full_name,
+      is_member: false,
       created_at: new Date().toISOString(),
     });
     candidates.push({
@@ -155,6 +190,7 @@ export const mockApi = {
       email: input.email,
       role: input.role,
       full_name: input.full_name,
+      is_member: false,
       created_at: new Date().toISOString(),
     };
     users.push(user);
@@ -227,17 +263,19 @@ export const mockApi = {
     return delay({ resume_url: `mock://resume/${file.name}`, resume_filename: file.name });
   },
 
-  async listJobs(params: { q?: string; work_mode?: WorkMode; location?: string }) {
+  async listJobs(params: { q?: string; work_mode?: WorkMode; location?: string; salary_min?: number; salary_max?: number; required_education?: string }) {
     const jobs = read<JobPosting[]>(KEY.jobs, []);
-    const q = params.q?.toLowerCase().trim();
     return delay(
       jobs
         .filter((j) => {
           if (params.work_mode && j.work_mode !== params.work_mode) return false;
           if (params.location && !j.location.toLowerCase().includes(params.location.toLowerCase())) return false;
-          if (q) {
-            const hay = `${j.title} ${j.company} ${j.description} ${j.required_skills.join(" ")}`.toLowerCase();
-            if (!hay.includes(q)) return false;
+          if (params.required_education && j.required_education !== params.required_education) return false;
+          if (params.salary_min != null && (j.salary_max == null || j.salary_max < params.salary_min)) return false;
+          if (params.salary_max != null && (j.salary_min == null || j.salary_min > params.salary_max)) return false;
+          if (params.q) {
+            const hay = `${j.title} ${j.company} ${j.description} ${j.location} ${j.required_skills.join(" ")}`;
+            if (!fuzzyMatch(params.q, hay)) return false;
           }
           return true;
         })
@@ -252,7 +290,7 @@ export const mockApi = {
     return delay(j);
   },
 
-  async recommendedJobs(k: number): Promise<JobMatch[]> {
+  async recommendedJobs(k?: number): Promise<JobMatch[]> {
     const u = auth.getUser();
     if (!u) throw new Error("Not authenticated");
     const candidates = read<CandidateProfile[]>(KEY.candidates, []);
@@ -261,15 +299,22 @@ export const mockApi = {
     const jobs = read<JobPosting[]>(KEY.jobs, []);
     const ranked = jobs
       .map((job) => ({ job, ...scoreJobForCandidate(job, c) }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, k);
-    return delay(ranked);
+      .sort((a, b) => b.score - a.score);
+    // Members (is_member=true) get all results; non-members capped at 10
+    const limit = u.is_member ? undefined : (k ?? 10);
+    return delay(limit != null ? ranked.slice(0, limit) : ranked);
   },
 
   async createJob(input: Omit<JobPosting, "id" | "employer_id" | "posted_at">) {
     const u = auth.getUser();
     if (!u || u.role !== "employer") throw new Error("Employer account required");
     const jobs = read<JobPosting[]>(KEY.jobs, []);
+    const myJobs = jobs.filter((j) => j.employer_id === u.id);
+    const jobLimit = u.is_member ? 3 : 1;
+    if (myJobs.length >= jobLimit) {
+      const label = u.is_member ? "Member" : "Non-member";
+      throw new Error(`Job posting limit reached. ${label} accounts may post up to ${jobLimit} job${jobLimit > 1 ? "s" : ""}.`);
+    }
     const j: JobPosting = {
       ...input,
       id: uid(),
@@ -300,36 +345,53 @@ export const mockApi = {
     return delay(jobs.filter((j) => j.employer_id === u.id).sort((a, b) => b.posted_at.localeCompare(a.posted_at)));
   },
 
-  async searchCandidates(params: { q?: string; skills?: string[]; education?: string; min_experience?: number }) {
+  async deleteJob(id: string) {
+    const u = auth.getUser();
+    if (!u || u.role !== "employer") throw new Error("Employer account required");
+    const jobs = read<JobPosting[]>(KEY.jobs, []);
+    const idx = jobs.findIndex((j) => j.id === id && j.employer_id === u.id);
+    if (idx === -1) throw new Error("Job not found");
+    jobs.splice(idx, 1);
+    write(KEY.jobs, jobs);
+    // Remove applications for this job
+    const applications = read<JobApplication[]>(KEY.applications, []);
+    write(KEY.applications, applications.filter((a) => a.job_id !== id));
+    return delay(undefined);
+  },
+
+  async searchCandidates(params: { q?: string; skills?: string[]; education?: string; min_experience?: number; location?: string }) {
     const candidates = read<CandidateProfile[]>(KEY.candidates, []);
-    const q = params.q?.toLowerCase().trim();
     return delay(
       candidates.filter((c) => {
         if (params.education && c.education !== params.education) return false;
         if (params.min_experience != null && c.years_experience < params.min_experience) return false;
+        if (params.location && !(c.location ?? "").toLowerCase().includes(params.location.toLowerCase())) return false;
         if (params.skills?.length) {
           const cs = new Set(c.skills.map((s) => s.toLowerCase()));
           if (!params.skills.every((s) => cs.has(s.toLowerCase()))) return false;
         }
-        if (q) {
-          const hay = `${c.full_name} ${c.headline ?? ""} ${c.bio ?? ""} ${c.major ?? ""} ${c.skills.join(" ")}`.toLowerCase();
-          if (!hay.includes(q)) return false;
+        if (params.q) {
+          const hay = `${c.full_name} ${c.headline ?? ""} ${c.bio ?? ""} ${c.major ?? ""} ${c.location ?? ""} ${c.skills.join(" ")}`;
+          if (!fuzzyMatch(params.q, hay)) return false;
         }
         return true;
       })
     );
   },
 
-  async recommendedCandidates(jobId: string, n: number): Promise<CandidateMatch[]> {
+  async recommendedCandidates(jobId: string, n?: number): Promise<CandidateMatch[]> {
+    const u = auth.getUser();
+    if (!u) throw new Error("Not authenticated");
     const jobs = read<JobPosting[]>(KEY.jobs, []);
     const job = jobs.find((j) => j.id === jobId);
     if (!job) throw new Error("Job not found");
     const candidates = read<CandidateProfile[]>(KEY.candidates, []);
     const ranked = candidates
       .map((c) => ({ candidate: c, ...scoreJobForCandidate(job, c) }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, n);
-    return delay(ranked);
+      .sort((a, b) => b.score - a.score);
+    // Members get all results; non-members capped at 10
+    const limit = u.is_member ? undefined : (n ?? 10);
+    return delay(limit != null ? ranked.slice(0, limit) : ranked);
   },
 
   async applyToJob(jobId: string): Promise<JobApplication> {
@@ -369,5 +431,27 @@ export const mockApi = {
 
     const applications = read<JobApplication[]>(KEY.applications, []);
     return delay(applications.filter((a) => a.job_id === jobId));
+  },
+
+  async activateMembership() {
+    const u = auth.getUser();
+    if (!u) throw new Error("Not authenticated");
+    const users = read<User[]>(KEY.users, []);
+    const idx = users.findIndex((x) => x.id === u.id);
+    if (idx !== -1) { users[idx].is_member = true; write(KEY.users, users); }
+    const updated = { ...u, is_member: true };
+    auth.setSession(auth.getToken()!, updated);
+    return delay({ is_member: true, user: updated });
+  },
+
+  async cancelMembership() {
+    const u = auth.getUser();
+    if (!u) throw new Error("Not authenticated");
+    const users = read<User[]>(KEY.users, []);
+    const idx = users.findIndex((x) => x.id === u.id);
+    if (idx !== -1) { users[idx].is_member = false; write(KEY.users, users); }
+    const updated = { ...u, is_member: false };
+    auth.setSession(auth.getToken()!, updated);
+    return delay({ is_member: false, user: updated });
   },
 };

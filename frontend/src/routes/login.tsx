@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { api, auth, isMockMode } from "@/lib/api";
 
@@ -11,6 +11,13 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+
+  // Client-only redirect — beforeLoad runs on the server where localStorage is unavailable.
+  useEffect(() => {
+    const u = auth.getUser();
+    if (u?.role === "candidate") router.navigate({ to: "/candidate/dashboard", replace: true });
+    else if (u?.role === "employer") router.navigate({ to: "/employer/dashboard", replace: true });
+  }, [router]);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);

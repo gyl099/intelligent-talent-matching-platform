@@ -21,6 +21,7 @@ function SearchCandidatesPage() {
   const [skillsText, setSkillsText] = useState("");
   const [education, setEducation] = useState("");
   const [minExp, setMinExp] = useState<number | "">("");
+  const [location, setLocation] = useState("");
   const [results, setResults] = useState<CandidateProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,10 +37,11 @@ function SearchCandidatesPage() {
         skills: skills.length ? skills : undefined,
         education: education || undefined,
         min_experience: minExp === "" ? undefined : Number(minExp),
+        location: location || undefined,
       })
       .then(setResults)
       .finally(() => setLoading(false));
-  }, [q, skillsText, education, minExp]);
+  }, [q, skillsText, education, minExp, location]);
 
   return (
     <div className="min-h-screen">
@@ -54,7 +56,12 @@ function SearchCandidatesPage() {
           <aside className="card-surface h-fit space-y-4 lg:sticky lg:top-24">
             <div>
               <label className="label">Search</label>
-              <input className="field" placeholder="name, role, bio…" value={q} onChange={(e) => setQ(e.target.value)} />
+              <input className="field" placeholder="name, role, bio… (typos OK)" value={q} onChange={(e) => setQ(e.target.value)} />
+              <p className="mt-1 text-xs text-muted-foreground">Fuzzy search — handles typos.</p>
+            </div>
+            <div>
+              <label className="label">Location</label>
+              <input className="field" placeholder="e.g. Sydney" value={location} onChange={(e) => setLocation(e.target.value)} />
             </div>
             <div>
               <label className="label">Required skills (comma)</label>
@@ -77,7 +84,7 @@ function SearchCandidatesPage() {
             </div>
           </aside>
 
-          <section className="grid gap-4">
+          <section className="grid content-start gap-4">
             {loading ? (
               <p className="text-muted-foreground">Loading…</p>
             ) : results.length === 0 ? (

@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -54,3 +55,19 @@ class LoginView(APIView):
             return Response({"detail": "Credentials invalid. Please try again."}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"token": token_for(user), "user": UserSerializer(user).data})
+
+
+class MembershipView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """Activate membership for the authenticated user."""
+        request.user.is_member = True
+        request.user.save(update_fields=["is_member"])
+        return Response({"is_member": True, "user": UserSerializer(request.user).data})
+
+    def delete(self, request):
+        """Cancel membership for the authenticated user."""
+        request.user.is_member = False
+        request.user.save(update_fields=["is_member"])
+        return Response({"is_member": False, "user": UserSerializer(request.user).data})
